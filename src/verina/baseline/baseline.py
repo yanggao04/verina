@@ -8,6 +8,7 @@ from verina.baseline.generate import (
     dspy_generate_code,
     dspy_generate_proof,
     dspy_generate_spec,
+    dsprover_generate_proof,
 )
 from verina.benchmark.report import EvaluationTaskArtifact
 from verina.benchmark.solution import (
@@ -26,8 +27,9 @@ max_retries = 1  # Number of retries for errors of failures to follow dspy forma
 
 
 class BaselineSolution(SimpleSolution):
-    def __init__(self, config: BaselineConfig):
+    def __init__(self, config: BaselineConfig, dsprover: bool):
         self.config = config
+        self.isdsprover=dsprover
 
         if config.combind_task_preference == "NO_GENERATED_AS_REF":
             preference = SimpleSolution.Preference.NO_GENERATED_AS_REF
@@ -151,11 +153,24 @@ class BaselineSolution(SimpleSolution):
         retry_count = 0
         while retry_count < max_retries:
             try:
-                output = await dspy_generate_proof(
-                    self.dspy_module,
-                    input,
-                    fewshot_examples,
-                )
+                if self.isdsprover:
+                    output = await dsprover_generate_proof(
+                        self.dspy_module,
+                        input,
+                        fewshot_examples,
+                    )
+                    # f=open("outdata/ds.log","a")
+                    # f.write("\n\n--------one take--------\n\n"+"---imports:---\n"+output.imports+"\n---proof_aux:---\n"+output.proof_aux+"\n---proof:---\n"+output.proof+"\n")
+                    # f.close()
+                else:    
+                    output = await dspy_generate_proof(
+                        self.dspy_module,
+                        input,
+                        fewshot_examples,
+                    )
+                    # f=open("outdata/other.log","a")
+                    # f.write("\n\n--------one take--------\n\n"+"---imports:---\n"+output.imports+"\n---proof_aux:---\n"+output.proof_aux+"\n---proof:---\n"+output.proof+"\n")
+                    # f.close()
                 return output
             except Exception as e:
                 logger.error(f"Error generating proof for data_id {data_id}: {e}")

@@ -9,6 +9,7 @@ from dspy import (
 from dspy import (
     Signature as DspySignature,
 )
+import dspy
 from rich import print
 
 from verina.benchmark.solution import (
@@ -362,6 +363,87 @@ def proof_task_template_from_input(input: GenProofInput) -> str:
     rendered = proof_lean_content_from_input_output(input, placeholder_output)
     return f"```lean4\n{rendered}```"
 
+# dsprover specific:
+
+def initial_parse(output: str) -> str:
+    lastline = output.strip().splitlines()[-1]
+    if "```lean4" not in output:
+        raise ValueError("There's not ```lean4 code block in the final output")
+    text=output.split("```lean4")[-1]
+    if "```" not in text:
+        raise ValueError("```lean4 and ``` delimeters not in pair")
+    text=text.split("```")[0].strip()
+    return text
+
+def parsing_output(output: str, thm: str) -> GenProofOutput:
+    output=initial_parse(output)
+    if f"theorem {thm}" not in output:
+        raise ValueError(f"theorem \"{thm}\" is not proven in the output")
+    proof_aux=""
+    proof=""
+    imports=""
+    if "import Mathlib" not in output:
+        imports=imports+"import Mathlib\n"
+    if "import Aesop" not in output:
+        imports=imports+"import Aesop\n"
+    pf=False
+    pfaux=False
+    waiting=""
+    for line in output.splitlines():
+        if line.strip()=="":
+            continue
+        if thm in line:
+            pf=True
+            pfaux=False
+            proof=proof+"\n"+waiting+line+"\n"
+            waiting=""
+        elif "theorem" in line or "def" in line:
+            pfaux=True
+            pf=False
+            proof_aux=proof_aux+"\n"+waiting+line+"\n"
+            waiting=""
+        elif "import" in line:
+            imports=imports+line+"\n"
+            pf=False
+            pfaux=False
+            waiting=""
+        elif pf:
+            proof=proof+waiting+line+"\n"
+        elif pfaux:
+            proof_aux=proof_aux+waiting+line+"\n"
+        elif "@[" in line:
+            waiting=waiting+line+"\n"
+        else:
+            raise ValueError(f"Can not identify what output field does this belong to: {line}")
+    return GenProofOutput(imports=imports.strip(),
+        proof_aux=proof_aux.strip(),
+        proof=proof.strip(),)
+
+async def dsprover_generate_proof(
+    dspy_module: Type[Module],
+    input: GenProofInput,
+    fewshot_examples: List[FewshotExample[GenProofInput, GenProofOutput]],
+) -> GenProofOutput:
+    task_template=proof_task_template_from_input(input)
+    prompt = """
+    Complete the following Lean 4 code:
+
+    {}
+
+    Before producing the Lean 4 code to formally prove the given theorem, provide a detailed proof plan outlining the main proof steps and strategies.
+    The plan should highlight key ideas, intermediate lemmas, and proof structures that will guide the construction of the final formal proof.
+    """.strip()
+    content=prompt.format(task_template)
+    messages=[{"role":"user", "content":content}]
+    generator=dspy.settings.lm
+    output=await generator.acall(messages=messages)
+    response = parsing_output(output=output[0], thm=input.signature.name+"_postcond_satisfied")
+    output = GenProofOutput(
+        imports=clean_output(response.imports, isImportsOrAux=True),
+        proof_aux=clean_output(response.proof_aux, isImportsOrAux=True),
+        proof=clean_output(response.proof, isImportsOrAux=False),
+    )
+    return output
 
 async def dspy_generate_proof(
     dspy_module: Type[Module],
