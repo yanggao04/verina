@@ -363,7 +363,7 @@ def proof_task_template_from_input(input: GenProofInput) -> str:
     rendered = proof_lean_content_from_input_output(input, placeholder_output)
     return f"```lean4\n{rendered}```"
 
-# dsprover specific:
+# litellm specific proof generation
 
 def initial_parse(output: str) -> str:
     lastline = output.strip().splitlines()[-1]
@@ -419,7 +419,7 @@ def parsing_output(output: str, thm: str) -> GenProofOutput:
         proof_aux=proof_aux.strip(),
         proof=proof.strip(),)
 
-async def dsprover_generate_proof(
+async def litellm_generate_proof(
     dspy_module: Type[Module],
     input: GenProofInput,
     fewshot_examples: List[FewshotExample[GenProofInput, GenProofOutput]],
@@ -438,6 +438,61 @@ async def dsprover_generate_proof(
     generator=dspy.settings.lm
     output=await generator.acall(messages=messages)
     response = parsing_output(output=output[0], thm=input.signature.name+"_postcond_satisfied")
+    output = GenProofOutput(
+        imports=clean_output(response.imports, isImportsOrAux=True),
+        proof_aux=clean_output(response.proof_aux, isImportsOrAux=True),
+        proof=clean_output(response.proof, isImportsOrAux=False),
+    )
+    return output
+
+async def litellm_generate_proof_with_refinement(
+    dspy_module: Type[Module],
+    input: GenProofInput,
+    prev_output: GenProofOutput,
+    prev_error: str,
+) -> GenProofOutput:
+    generator=dspy.settings.lm
+    task_template=proof_task_template_from_input(input)
+    prev_code=proof_lean_content_from_input_output(input, prev_output)
+    prompt = f"""
+    Complete the following Lean 4 code:
+
+    {task_template}
+
+    Given the following pseudo solution
+
+    {prev_code}
+
+    with the error: 
+
+    Before producing the Lean 4 code to formally prove the given theorem, provide a detailed proof plan outlining the main proof steps and strategies.
+    The plan should highlight key ideas, intermediate lemmas, and proof structures that will guide the construction of the final formal proof.
+    """.strip()
+    messages=[{"role":"user", "content":prompt}]
+    output=await generator.acall(messages=messages)
+    response = parsing_output(output=output[0], thm=input.signature.name+"_postcond_satisfied")
+    output = GenProofOutput(
+        imports=clean_output(response.imports, isImportsOrAux=True),
+        proof_aux=clean_output(response.proof_aux, isImportsOrAux=True),
+        proof=clean_output(response.proof, isImportsOrAux=False),
+    )
+    return output
+
+async def dspy_generate_proof_with_refinement(
+    dspy_module: Type[Module],
+    input: GenProofInput,
+    prev_output: GenProofOutput,
+    prev_error: str,
+) -> GenProofOutput:
+    generator = dspy_module(BaselineGenProofWithRefinementSig)
+    response = await generator.acall(
+        task_description=input.description,
+        task_template=proof_task_template_from_input(input),
+        prev_imports=prev_output.imports,
+        prev_proof_aux=prev_output.proof_aux,
+        prev_proof=prev_output.proof,
+        prev_error=prev_error,
+    )
     output = GenProofOutput(
         imports=clean_output(response.imports, isImportsOrAux=True),
         proof_aux=clean_output(response.proof_aux, isImportsOrAux=True),

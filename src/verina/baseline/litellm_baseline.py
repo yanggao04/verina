@@ -8,7 +8,7 @@ from verina.baseline.generate import (
     dspy_generate_code,
     dspy_generate_proof,
     dspy_generate_spec,
-    dsprover_generate_proof
+    litellm_generate_proof
 )
 from verina.baseline.baseline import BaselineSolution
 from verina.benchmark.report import EvaluationTaskArtifact
@@ -30,7 +30,6 @@ max_retries = 1  # Number of retries for errors of failures to follow dspy forma
 
 class LiteLLMBaselineSolution(BaselineSolution):
     def __init__(self, config: BaselineConfig):
-        self.config = config
         super().__init__(config)
 
     @staticmethod
@@ -56,7 +55,7 @@ class LiteLLMBaselineSolution(BaselineSolution):
         retry_count = 0
         while retry_count < max_retries:
             try:
-                output = await dsprover_generate_proof(
+                output = await litellm_generate_proof(
                     self.dspy_module,
                     input,
                     fewshot_examples,
