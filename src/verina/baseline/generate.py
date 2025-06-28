@@ -417,9 +417,10 @@ def parsing_output(output: str, thm: str) -> GenProofOutput:
             raise ValueError(f"Can not identify what output field does this belong to: {line}")
     return GenProofOutput(imports=imports.strip(),
         proof_aux=proof_aux.strip(),
-        proof=proof.strip(),)
+        proof=proof.strip(),
+    )
 
-async def litellm_generate_proof(
+async def no_example_litellm_generate_proof(
     dspy_module: Type[Module],
     input: GenProofInput,
     fewshot_examples: List[FewshotExample[GenProofInput, GenProofOutput]],
@@ -435,6 +436,37 @@ async def litellm_generate_proof(
     """.strip()
     content=prompt.format(task_template)
     messages=[{"role":"user", "content":content}]
+    generator=dspy.settings.lm
+    output=await generator.acall(messages=messages)
+    response = parsing_output(output=output[0], thm=input.signature.name+"_postcond_satisfied")
+    output = GenProofOutput(
+        imports=clean_output(response.imports, isImportsOrAux=True),
+        proof_aux=clean_output(response.proof_aux, isImportsOrAux=True),
+        proof=clean_output(response.proof, isImportsOrAux=False),
+    )
+    return output
+
+async def litellm_generate_proof(
+    dspy_module: Type[Module],
+    input: GenProofInput,
+    fewshot_examples: List[FewshotExample[GenProofInput, GenProofOutput]],
+) -> GenProofOutput:
+    task_template=proof_task_template_from_input(input)
+    messages=[]
+    prompt = """
+    Complete the following Lean 4 code:
+
+    {}
+
+    Before producing the Lean 4 code to formally prove the given theorem, provide a detailed proof plan outlining the main proof steps and strategies.
+    The plan should highlight key ideas, intermediate lemmas, and proof structures that will guide the construction of the final formal proof.
+    """.strip()
+    for example in fewshot_examples:
+        i=proof_task_template_from_input(example.example_input)
+        o=proof_lean_content_from_input_output(example.example_input,example.example_output)
+        messages.append({"role":"user", "content":prompt.format(i)+"\n\n"+o})
+    content=prompt.format(task_template)
+    messages.append({"role":"user", "content":content})
     generator=dspy.settings.lm
     output=await generator.acall(messages=messages)
     response = parsing_output(output=output[0], thm=input.signature.name+"_postcond_satisfied")
