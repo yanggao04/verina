@@ -161,6 +161,8 @@ async def litellm_generate_proof_with_refinement(
 
     with the error: 
 
+    {prev_error}
+
     Before producing the Lean 4 code to formally prove the given theorem, provide a detailed proof plan outlining the main proof steps and strategies.
     The plan should highlight key ideas, intermediate lemmas, and proof structures that will guide the construction of the final formal proof.
     """.strip()
