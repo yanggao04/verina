@@ -18,9 +18,11 @@ from verina.benchmark.solution import (
 
 
 def initial_parse(output: str) -> str:
-    if "```lean4" not in output:
-        raise ValueError("There's not ```lean4 code block in the final output")
-    text = output.split("```lean4")[-1]
+    if "```lean" not in output:
+        raise ValueError("There's not ```lean code block in the final output")
+    text = output.split("```lean")[-1]
+    if text[0] == "4":
+        text = text[1:-1]
     if "```" not in text:
         raise ValueError("```lean4 and ``` delimeters not in pair")
     text = text.split("```")[0].strip()
