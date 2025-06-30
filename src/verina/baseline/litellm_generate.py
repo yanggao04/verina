@@ -76,35 +76,6 @@ def parsing_output(output: str, thm: str) -> GenProofOutput:
     )
 
 
-async def no_example_litellm_generate_proof(
-    dspy_module: Type[Module],
-    input: GenProofInput,
-    fewshot_examples: List[FewshotExample[GenProofInput, GenProofOutput]],
-) -> GenProofOutput:
-    task_template = proof_task_template_from_input(input)
-    prompt = """
-    Complete the following Lean 4 code:
-
-    {}
-
-    Before producing the Lean 4 code to formally prove the given theorem, provide a detailed proof plan outlining the main proof steps and strategies.
-    The plan should highlight key ideas, intermediate lemmas, and proof structures that will guide the construction of the final formal proof.
-    """.strip()
-    content = prompt.format(task_template)
-    messages = [{"role": "user", "content": content}]
-    generator = dspy.settings.lm
-    output = await generator.acall(messages=messages)
-    response = parsing_output(
-        output=output[0], thm=input.signature.name + "_postcond_satisfied"
-    )
-    output = GenProofOutput(
-        imports=clean_output(response.imports, isImportsOrAux=True),
-        proof_aux=clean_output(response.proof_aux, isImportsOrAux=True),
-        proof=clean_output(response.proof, isImportsOrAux=False),
-    )
-    return output
-
-
 async def litellm_generate_proof(
     dspy_module: Type[Module],
     input: GenProofInput,
