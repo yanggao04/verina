@@ -1,28 +1,15 @@
 import asyncio
 from typing import List, Optional
 
-from dspy import ChainOfThought, Predict
-
-from verina.baseline.config import BaselineConfig
-from verina.baseline.generate import (
-    dspy_generate_code,
-    dspy_generate_proof,
-    dspy_generate_spec,
-    litellm_generate_proof
-)
 from verina.baseline.baseline import BaselineSolution
+from verina.baseline.config import BaselineConfig
+from verina.baseline.litellm_generate import litellm_generate_proof
 from verina.benchmark.report import EvaluationTaskArtifact
 from verina.benchmark.solution import (
     FewshotExample,
-    GenCodeInput,
-    GenCodeOutput,
     GenProofInput,
     GenProofOutput,
-    GenSpecInput,
-    GenSpecOutput,
-    SimpleSolution,
 )
-
 from verina.utils.logging import logger
 
 max_retries = 1  # Number of retries for errors of failures to follow dspy format

@@ -1,11 +1,8 @@
 from typing import List, Optional
 
-from verina.baseline.baseline import BaselineSolution
 from verina.baseline.config import BaselineConfig
-from verina.baseline.generate import (
-    dspy_generate_proof,
-    dspy_generate_proof_with_refinement,
-    proof_lean_content_from_input_output,
+from verina.baseline.generate import proof_lean_content_from_input_output
+from verina.baseline.litellm_generate import (
     litellm_generate_proof,
     litellm_generate_proof_with_refinement,
 )
