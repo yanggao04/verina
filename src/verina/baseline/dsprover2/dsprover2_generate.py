@@ -1,9 +1,6 @@
-from typing import List, Type
+from typing import List
 
 import dspy
-from dspy import (
-    Module,
-)
 
 from verina.baseline.generate import (
     clean_output,
@@ -79,7 +76,6 @@ def parsing_output(output: str, thm: str) -> GenProofOutput:
 
 
 async def dsprover2_generate_proof(
-    dspy_module: Type[Module],
     input: GenProofInput,
     fewshot_examples: List[FewshotExample[GenProofInput, GenProofOutput]],
 ) -> GenProofOutput:
@@ -115,7 +111,6 @@ async def dsprover2_generate_proof(
 
 
 async def dsprover2_generate_proof_with_refinement(
-    dspy_module: Type[Module],
     input: GenProofInput,
     prev_output: GenProofOutput,
     prev_error: str,

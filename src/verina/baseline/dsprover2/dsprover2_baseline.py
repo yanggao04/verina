@@ -43,7 +43,6 @@ class DSProver2BaselineSolution(BaselineSolution):
         while retry_count < max_retries:
             try:
                 output = await dsprover2_generate_proof(
-                    self.dspy_module,
                     input,
                     fewshot_examples,
                 )

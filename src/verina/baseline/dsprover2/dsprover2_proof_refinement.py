@@ -36,7 +36,6 @@ class DSProver2ProofRefinementSolution(ProofRefinementSolution):
         # TODO: figure out checkpoint
         try:
             output = await dsprover2_generate_proof(
-                self.dspy_module,
                 input,
                 fewshot_examples,
             )
@@ -77,7 +76,7 @@ class DSProver2ProofRefinementSolution(ProofRefinementSolution):
                 return output
             try:
                 output = await dsprover2_generate_proof_with_refinement(
-                    self.dspy_module, input, output, error_message
+                    input, output, error_message
                 )
             except Exception as e:
                 logger.error(f"Error during proof refinement: {e}")
