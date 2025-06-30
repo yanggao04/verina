@@ -76,7 +76,7 @@ def parsing_output(output: str, thm: str) -> GenProofOutput:
     )
 
 
-async def litellm_generate_proof(
+async def dsprover2_generate_proof(
     dspy_module: Type[Module],
     input: GenProofInput,
     fewshot_examples: List[FewshotExample[GenProofInput, GenProofOutput]],
@@ -112,7 +112,7 @@ async def litellm_generate_proof(
     return output
 
 
-async def litellm_generate_proof_with_refinement(
+async def dsprover2_generate_proof_with_refinement(
     dspy_module: Type[Module],
     input: GenProofInput,
     prev_output: GenProofOutput,

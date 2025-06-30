@@ -2,9 +2,9 @@ from typing import List, Optional
 
 from verina.baseline.config import BaselineConfig
 from verina.baseline.generate import proof_lean_content_from_input_output
-from verina.baseline.litellm_generate import (
-    litellm_generate_proof,
-    litellm_generate_proof_with_refinement,
+from verina.baseline.dsprover2_generate import (
+    dsprover2_generate_proof,
+    dsprover2_generate_proof_with_refinement,
 )
 from verina.baseline.proof_refinement import ProofRefinementSolution
 from verina.benchmark.metrics import metric_lean_compile
@@ -17,7 +17,7 @@ from verina.benchmark.solution import (
 from verina.utils.logging import logger
 
 
-class LiteLLMProofRefinementSolution(ProofRefinementSolution):
+class DSProver2ProofRefinementSolution(ProofRefinementSolution):
     def __init__(self, config: BaselineConfig):
         super().__init__(config)
 
@@ -35,7 +35,7 @@ class LiteLLMProofRefinementSolution(ProofRefinementSolution):
         # We don't use checkpoint for proof refinement
         # TODO: figure out checkpoint
         try:
-            output = await litellm_generate_proof(
+            output = await dsprover2_generate_proof(
                 self.dspy_module,
                 input,
                 fewshot_examples,
@@ -76,7 +76,7 @@ class LiteLLMProofRefinementSolution(ProofRefinementSolution):
                 output.extra_info["refined_times"] = refined_times
                 return output
             try:
-                output = await litellm_generate_proof_with_refinement(
+                output = await dsprover2_generate_proof_with_refinement(
                     self.dspy_module, input, output, error_message
                 )
             except Exception as e:

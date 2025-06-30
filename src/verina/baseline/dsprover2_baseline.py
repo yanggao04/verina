@@ -3,7 +3,7 @@ from typing import List, Optional
 
 from verina.baseline.baseline import BaselineSolution
 from verina.baseline.config import BaselineConfig
-from verina.baseline.litellm_generate import litellm_generate_proof
+from verina.baseline.dsprover2_generate import dsprover2_generate_proof
 from verina.benchmark.report import EvaluationTaskArtifact
 from verina.benchmark.solution import (
     FewshotExample,
@@ -15,7 +15,7 @@ from verina.utils.logging import logger
 max_retries = 1  # Number of retries for errors of failures to follow dspy format
 
 
-class LiteLLMBaselineSolution(BaselineSolution):
+class DSProver2BaselineSolution(BaselineSolution):
     def __init__(self, config: BaselineConfig):
         super().__init__(config)
 
@@ -42,7 +42,7 @@ class LiteLLMBaselineSolution(BaselineSolution):
         retry_count = 0
         while retry_count < max_retries:
             try:
-                output = await litellm_generate_proof(
+                output = await dsprover2_generate_proof(
                     self.dspy_module,
                     input,
                     fewshot_examples,
