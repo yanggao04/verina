@@ -21,7 +21,7 @@ class LiteLLMBaselineSolution(BaselineSolution):
 
     @staticmethod
     def name() -> str:
-        return "baseline"
+        return "dsprover_baseline"
 
     async def gen_proof(
         self,

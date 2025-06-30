@@ -23,7 +23,7 @@ class LiteLLMProofRefinementSolution(ProofRefinementSolution):
 
     @staticmethod
     def name() -> str:
-        return "proof_refinement_baseline"
+        return "dsprover_proof_refinement_baseline"
 
     async def gen_proof(
         self,
