@@ -3,7 +3,7 @@ from typing import List, Optional
 
 from verina.baseline.baseline import BaselineSolution
 from verina.baseline.config import BaselineConfig
-from verina.baseline.dsprover2_generate import dsprover2_generate_proof
+from verina.baseline.dsprover2.dsprover2_generate import dsprover2_generate_proof
 from verina.benchmark.report import EvaluationTaskArtifact
 from verina.benchmark.solution import (
     FewshotExample,
@@ -21,7 +21,7 @@ class DSProver2BaselineSolution(BaselineSolution):
 
     @staticmethod
     def name() -> str:
-        return "dsprover_baseline"
+        return "dsprover_bavseline"
 
     async def gen_proof(
         self,

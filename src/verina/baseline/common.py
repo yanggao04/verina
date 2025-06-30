@@ -1,7 +1,9 @@
 from verina.baseline.baseline import BaselineSolution
 from verina.baseline.config import BaselineConfig
-from verina.baseline.dsprover2_baseline import DSProver2BaselineSolution
-from verina.baseline.dsprover2_proof_refinement import DSProver2ProofRefinementSolution
+from verina.baseline.dsprover2.dsprover2_baseline import DSProver2BaselineSolution
+from verina.baseline.dsprover2.dsprover2_proof_refinement import (
+    DSProver2ProofRefinementSolution,
+)
 from verina.baseline.proof_refinement import ProofRefinementSolution
 from verina.benchmark.solution import Solution
 

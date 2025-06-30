@@ -2,7 +2,7 @@ from typing import List, Optional
 
 from verina.baseline.config import BaselineConfig
 from verina.baseline.generate import proof_lean_content_from_input_output
-from verina.baseline.dsprover2_generate import (
+from verina.baseline.dsprover2.dsprover2_generate import (
     dsprover2_generate_proof,
     dsprover2_generate_proof_with_refinement,
 )
