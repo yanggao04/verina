@@ -1,6 +1,8 @@
 import asyncio
 from typing import List, Optional
 
+import dspy
+
 from verina.baseline.baseline import BaselineSolution
 from verina.baseline.config import BaselineConfig
 from verina.baseline.dsprover2.dsprover2_generate import dsprover2_generate_proof
@@ -19,9 +21,12 @@ class DSProver2BaselineSolution(BaselineSolution):
     def __init__(self, config: BaselineConfig):
         super().__init__(config)
 
+    def get_lm(self) -> dspy.LM:
+        return dspy.settings.lm
+
     @staticmethod
     def name() -> str:
-        return "dsprover_bavseline"
+        return "dsprover_baseline"
 
     async def gen_proof(
         self,
@@ -43,6 +48,7 @@ class DSProver2BaselineSolution(BaselineSolution):
         while retry_count < max_retries:
             try:
                 output = await dsprover2_generate_proof(
+                    self.get_lm(),
                     input,
                     fewshot_examples,
                 )

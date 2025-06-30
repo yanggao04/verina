@@ -1,6 +1,6 @@
 from typing import List
 
-import dspy
+from dspy import LM
 
 from verina.baseline.generate import (
     clean_output,
@@ -19,7 +19,7 @@ def initial_parse(output: str) -> str:
         raise ValueError("There's not ```lean code block in the final output")
     text = output.split("```lean")[-1]
     if text[0] == "4":
-        text = text[1:-1]
+        text = text[1:]
     if "```" not in text:
         raise ValueError("```lean4 and ``` delimeters not in pair")
     text = text.split("```")[0].strip()
@@ -76,6 +76,7 @@ def parsing_output(output: str, thm: str) -> GenProofOutput:
 
 
 async def dsprover2_generate_proof(
+    lm: LM,
     input: GenProofInput,
     fewshot_examples: List[FewshotExample[GenProofInput, GenProofOutput]],
 ) -> GenProofOutput:
@@ -97,8 +98,7 @@ async def dsprover2_generate_proof(
         messages.append({"role": "user", "content": prompt.format(i) + "\n\n" + o})
     content = prompt.format(task_template)
     messages.append({"role": "user", "content": content})
-    generator = dspy.settings.lm
-    output = await generator.acall(messages=messages)
+    output = await lm.acall(messages=messages)
     response = parsing_output(
         output=output[0], thm=input.signature.name + "_postcond_satisfied"
     )
@@ -111,11 +111,11 @@ async def dsprover2_generate_proof(
 
 
 async def dsprover2_generate_proof_with_refinement(
+    lm: LM,
     input: GenProofInput,
     prev_output: GenProofOutput,
     prev_error: str,
 ) -> GenProofOutput:
-    generator = dspy.settings.lm
     task_template = proof_task_template_from_input(input)
     prev_code = proof_lean_content_from_input_output(input, prev_output)
     prompt = f"""
@@ -135,7 +135,7 @@ async def dsprover2_generate_proof_with_refinement(
     The plan should highlight key ideas, intermediate lemmas, and proof structures that will guide the construction of the final formal proof.
     """.strip()
     messages = [{"role": "user", "content": prompt}]
-    output = await generator.acall(messages=messages)
+    output = await lm.acall(messages=messages)
     response = parsing_output(
         output=output[0], thm=input.signature.name + "_postcond_satisfied"
     )

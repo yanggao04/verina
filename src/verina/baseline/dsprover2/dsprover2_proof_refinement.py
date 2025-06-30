@@ -1,5 +1,7 @@
 from typing import List, Optional
 
+import dspy
+
 from verina.baseline.config import BaselineConfig
 from verina.baseline.generate import proof_lean_content_from_input_output
 from verina.baseline.dsprover2.dsprover2_generate import (
@@ -21,6 +23,9 @@ class DSProver2ProofRefinementSolution(ProofRefinementSolution):
     def __init__(self, config: BaselineConfig):
         super().__init__(config)
 
+    def get_lm(self) -> dspy.LM:
+        return dspy.settings.lm
+
     @staticmethod
     def name() -> str:
         return "dsprover_proof_refinement_baseline"
@@ -36,6 +41,7 @@ class DSProver2ProofRefinementSolution(ProofRefinementSolution):
         # TODO: figure out checkpoint
         try:
             output = await dsprover2_generate_proof(
+                self.get_lm(),
                 input,
                 fewshot_examples,
             )
@@ -76,7 +82,7 @@ class DSProver2ProofRefinementSolution(ProofRefinementSolution):
                 return output
             try:
                 output = await dsprover2_generate_proof_with_refinement(
-                    input, output, error_message
+                    self.get_lm(), input, output, error_message
                 )
             except Exception as e:
                 logger.error(f"Error during proof refinement: {e}")
