@@ -8,20 +8,38 @@ from verina.baseline.dsprover2.dsprover2_generate import (
     dsprover2_generate_proof,
     dsprover2_generate_proof_with_refinement,
 )
-from verina.baseline.proof_refinement import ProofRefinementSolution
 from verina.benchmark.metrics import metric_lean_compile
 from verina.benchmark.report import EvaluationTaskArtifact
 from verina.benchmark.solution import (
     FewshotExample,
+    GenCodeInput,
+    GenCodeOutput,
     GenProofInput,
     GenProofOutput,
+    GenSpecInput,
+    GenSpecOutput,
+    SimpleSolution,
 )
 from verina.utils.logging import logger
 
 
-class DSProver2ProofRefinementSolution(ProofRefinementSolution):
+class DSProver2ProofRefinementSolution(SimpleSolution):
     def __init__(self, config: BaselineConfig):
-        super().__init__(config)
+        self.config = config
+
+        if config.combind_task_preference == "NO_GENERATED_AS_REF":
+            preference = SimpleSolution.Preference.NO_GENERATED_AS_REF
+        elif config.combind_task_preference == "USE_GENERATED_CODE_AS_REF":
+            preference = SimpleSolution.Preference.USE_GENERATED_CODE_AS_REF
+        elif config.combind_task_preference == "USE_GENERATED_SPEC_AS_REF":
+            preference = SimpleSolution.Preference.USE_GENERATED_SPEC_AS_REF
+        else:
+            raise ValueError(
+                f"Unknown combind task preference: {config.combind_task_preference}. "
+                "Please use 'NO_GENERATED_AS_REF', 'USE_GENERATED_CODE_AS_REF', or 'USE_GENERATED_SPEC_AS_REF'."
+            )
+
+        super().__init__(preference)
 
     def get_lm(self) -> dspy.LM:
         return dspy.settings.lm
@@ -29,6 +47,24 @@ class DSProver2ProofRefinementSolution(ProofRefinementSolution):
     @staticmethod
     def name() -> str:
         return "dsprover_proof_refinement_baseline"
+
+    async def gen_code(
+        self,
+        data_id: str,
+        input: GenCodeInput,
+        fewshot_examples: List[FewshotExample[GenCodeInput, GenCodeOutput]],
+        checkpoint: Optional[EvaluationTaskArtifact] = None,
+    ) -> GenCodeOutput:
+        raise NotImplementedError
+
+    async def gen_spec(
+        self,
+        data_id: str,
+        input: GenSpecInput,
+        fewshot_examples: List[FewshotExample[GenSpecInput, GenSpecOutput]],
+        checkpoint: Optional[EvaluationTaskArtifact] = None,
+    ) -> GenSpecOutput:
+        raise NotImplementedError
 
     async def gen_proof(
         self,
