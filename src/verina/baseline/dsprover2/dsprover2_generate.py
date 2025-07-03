@@ -15,8 +15,10 @@ from verina.benchmark.solution import (
 
 
 def initial_parse(output: str) -> str:
+    # Make sure lean program is generated
     if "```lean" not in output:
         raise ValueError("There's not ```lean code block in the final output")
+    # Extract lean program from the llm output
     text = output.split("```lean")[-1]
     if text[0] == "4":
         text = text[1:]
@@ -26,33 +28,43 @@ def initial_parse(output: str) -> str:
     return text
 
 
+# dsprover generates a single string for output, consisting of detailed thoughts and final lean program
+# the name of the theorem is provided to distinguish between "proof" and "proof_aux"
 def parsing_output(output: str, thm: str) -> GenProofOutput:
+    # Initial parsing the output by extracting the final lean program, ommitting the rest details
     output = initial_parse(output)
     if f"theorem {thm}" not in output:
         raise ValueError(f'theorem "{thm}" is not proven in the output')
+    # Distinguishing between imports, proof_aux, and proof in the lean program generated
     proof_aux = ""
     proof = ""
     imports = ""
+    # dsprover normally won't generate imports. Therefore, we include the two most commonly used libraries in "imports" field.
     if "import Mathlib" not in output:
         imports = imports + "import Mathlib\n"
     if "import Aesop" not in output:
         imports = imports + "import Aesop\n"
+    # Reading line by line and splitting them into corresponding output fields
     pf = False
     pfaux = False
     waiting = ""
     for line in output.splitlines():
+        # skip the empty line
         if line.strip() == "":
             continue
+        # if the name of the theorem appear, then this line and the following lines should be the proof
         if thm in line:
             pf = True
             pfaux = False
             proof = proof + "\n" + waiting + line + "\n"
             waiting = ""
+        # for the rest theorems or defs, they are proof_aux
         elif "theorem" in line or "def" in line:
             pfaux = True
             pf = False
             proof_aux = proof_aux + "\n" + waiting + line + "\n"
             waiting = ""
+        # import only takes one line (for each library)
         elif "import" in line:
             imports = imports + line + "\n"
             pf = False
@@ -62,11 +74,12 @@ def parsing_output(output: str, thm: str) -> GenProofOutput:
             proof = proof + waiting + line + "\n"
         elif pfaux:
             proof_aux = proof_aux + waiting + line + "\n"
+        # lines can be decorators to a theorem/def. They should go with what comes next
         elif "@[" in line:
             waiting = waiting + line + "\n"
         else:
             raise ValueError(
-                f"Can not identify what output field does this belong to: {line}"
+                f"Can not identify what output field this line belongs to: {line}"
             )
     return GenProofOutput(
         imports=imports.strip(),
