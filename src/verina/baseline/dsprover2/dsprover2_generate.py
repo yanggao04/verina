@@ -56,7 +56,7 @@ def parsing_output(output: str, thm: str) -> GenProofOutput:
             waiting = waiting + line.strip()+ "\n"
             continue
         # if the name of the theorem appear, then this line and the following lines should be the proof
-        if thm in line:
+        if thm in line and "theorem" in line and "_satisfied" in line:
             pf = True
             pfaux = False
             proof = proof + "\n" + waiting + line + "\n"
@@ -116,7 +116,7 @@ async def dsprover2_generate_proof(
     messages.append({"role": "user", "content": content})
     output = await lm.acall(messages=messages)
     response = parsing_output(
-        output=output[0], thm=input.signature.name + "_postcond_satisfied"
+        output=output[0], thm=input.signature.name
     )
     output = GenProofOutput(
         imports=clean_output(response.imports, isImportsOrAux=True),
