@@ -77,6 +77,8 @@ def parsing_output(output: str, thm: str) -> GenProofOutput:
         # lines can be decorators to a theorem/def. They should go with what comes next
         elif "@[" in line:
             waiting = waiting + line + "\n"
+        elif line.strip().startswith("--"):
+            waiting = waiting + line.strip() + "\n"
         else:
             raise ValueError(
                 f"Can not identify what output field this line belongs to: {line}"

@@ -20,8 +20,10 @@ from verina.benchmark.solution import (
     GenSpecOutput,
     SimpleSolution,
 )
-from verina.utils.logging import logger
+from verina.utils.logging import ( logger, enable_file_logger )
 
+def simp(output: GenProofOutput):
+    return {"imports": output.imports, "proof_aux": output.proof_aux, "proof": output.proof}
 
 class DSProver2ProofRefinementSolution(SimpleSolution):
     def __init__(self, config: BaselineConfig):
@@ -75,6 +77,8 @@ class DSProver2ProofRefinementSolution(SimpleSolution):
     ) -> GenProofOutput:
         # We don't use checkpoint for proof refinement
         # TODO: figure out checkpoint
+        enable_file_logger()
+        history={}
         try:
             output = await dsprover2_generate_proof(
                 self.get_lm(),
@@ -88,8 +92,10 @@ class DSProver2ProofRefinementSolution(SimpleSolution):
                 proof_aux="",
                 proof="",
             )
+            history["original"]={"output": simp(output) ,"error":f"Error during proof generation: {e}"}
 
         if self.config.refinements is None:
+            output.extra_info["history"]=history
             return output
 
         refined_times = 0
@@ -115,11 +121,16 @@ class DSProver2ProofRefinementSolution(SimpleSolution):
                 error_message = "Failed to generate proof. The model response does not follow the expected format."
             if can_compile:
                 output.extra_info["refined_times"] = refined_times
+                output.extra_info["history"]=history
                 return output
+            history[f"refinement_{refined_times}"]={"output":simp(output), "error": error_message}
             try:
                 output = await dsprover2_generate_proof_with_refinement(
                     self.get_lm(), input, output, error_message
                 )
             except Exception as e:
                 logger.error(f"Error during proof refinement: {e}")
+                history[f"error_{refined_times}"]={"error":f"Error during proof refinement: {e}"}
+        output.extra_info["refined_times"]=refined_times
+        output.extra_info["history"]=history
         return output
