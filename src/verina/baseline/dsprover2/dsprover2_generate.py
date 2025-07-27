@@ -52,6 +52,9 @@ def parsing_output(output: str, thm: str) -> GenProofOutput:
         # skip the empty line
         if line.strip() == "":
             continue
+        elif line.strip().startwith("--"):
+            waiting = waiting + line.strip()+ "\n"
+            continue
         # if the name of the theorem appear, then this line and the following lines should be the proof
         if thm in line:
             pf = True
@@ -77,8 +80,6 @@ def parsing_output(output: str, thm: str) -> GenProofOutput:
         # lines can be decorators to a theorem/def. They should go with what comes next
         elif "@[" in line:
             waiting = waiting + line + "\n"
-        elif line.strip().startswith("--"):
-            waiting = waiting + line.strip() + "\n"
         else:
             raise ValueError(
                 f"Can not identify what output field this line belongs to: {line}"
